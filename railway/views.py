@@ -1,5 +1,6 @@
 from django.db.models import QuerySet, F, Count
-from rest_framework import viewsets
+from rest_framework import viewsets, mixins
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.serializers import ModelSerializer
 
 from railway.models import (
@@ -117,10 +118,15 @@ class TripViewSet(viewsets.ModelViewSet):
         return serializer_class
 
 
-class OrderViewSet(viewsets.ModelViewSet):
+class OrderViewSet(
+    viewsets.GenericViewSet,
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    ):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
     pagination_class = OrderPagination
+    permission_classes = (IsAuthenticated,)
 
     def perform_create(self, serializer: ModelSerializer) -> None:
         serializer.save(user=self.request.user)
