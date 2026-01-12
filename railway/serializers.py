@@ -1,3 +1,4 @@
+from django.db import transaction
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.relations import SlugRelatedField
@@ -76,6 +77,19 @@ class CrewSerializer(serializers.ModelSerializer):
         fields = ("id", "name",)
 
 
+class TripSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Trip
+        fields = (
+            "id",
+            "departure_time",
+            "arrival_time",
+            "route",
+            "train",
+            "crews"
+        )
+
+
 class TripListSerializer(serializers.ModelSerializer):
     departure_station = serializers.CharField(
         source="route.source.name", read_only=True
@@ -87,6 +101,7 @@ class TripListSerializer(serializers.ModelSerializer):
     train_capacity = serializers.IntegerField(
         source="train.capacity", read_only=True
     )
+    tickets_available = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Trip
@@ -96,12 +111,14 @@ class TripListSerializer(serializers.ModelSerializer):
             "arrival_station",
             "train_name",
             "train_capacity",
+            "tickets_available",
             "departure_time",
             "arrival_time",
         )
 
 
 class TripDetailSerializer(serializers.ModelSerializer):
+    tickets_available = serializers.IntegerField(read_only=True)
     route = RouteDetailSerializer(many=False, read_only=True)
     train = TrainSerializer(many=False, read_only=True)
     crews = SlugRelatedField(
@@ -114,6 +131,7 @@ class TripDetailSerializer(serializers.ModelSerializer):
             "id",
             "departure_time",
             "arrival_time",
+            "tickets_available",
             "route",
             "train",
             "crews"
@@ -162,6 +180,7 @@ class OrderCreateSerializer(serializers.ModelSerializer):
         model = Order
         fields = ("id", "created_at", "tickets")
 
+    @transaction.atomic
     def create(self, validated_data: dict) -> Order:
         tickets = validated_data.pop("tickets")
         order = Order.objects.create(**validated_data)
@@ -170,7 +189,7 @@ class OrderCreateSerializer(serializers.ModelSerializer):
         return order
 
 
-class OrderSerializer(OrderCreateSerializer):
+class OrderSerializer(serializers.ModelSerializer):
     tickets = TicketSerializer(many=True, read_only=True)
 
     class Meta:
