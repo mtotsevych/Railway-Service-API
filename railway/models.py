@@ -81,7 +81,7 @@ class Trip(models.Model):
     train = models.ForeignKey(
         Train, on_delete=models.CASCADE, related_name="trips"
     )
-    crews = models.ManyToManyField(Crew, related_name="trips")
+    crews = models.ManyToManyField(Crew, related_name="trips", blank=True)
 
     def __str__(self) -> str:
         return (
