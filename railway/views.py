@@ -1,6 +1,13 @@
 from django.db.models import QuerySet, F, Count
+from drf_spectacular.utils import (
+    extend_schema,
+    OpenApiParameter,
+    OpenApiExample
+)
 from rest_framework import viewsets, mixins
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.request import Request
+from rest_framework.response import Response
 from rest_framework.serializers import ModelSerializer
 
 from railway.models import (
@@ -45,6 +52,26 @@ class TrainViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(name__icontains=train_name)
         return queryset
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="name",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter by name of the train",
+                required=False,
+                examples=[
+                    OpenApiExample(
+                        name="name",
+                        value="Intercity"
+                    )
+                ]
+            )
+        ]
+    )
+    def list(self, request: Request, *args, **kwargs) -> Response:
+        return super().list(request, *args, **kwargs)
+
 
 class CrewViewSet(viewsets.ModelViewSet):
     queryset = Crew.objects.all()
@@ -61,6 +88,26 @@ class StationViewSet(viewsets.ModelViewSet):
         if station_name:
             queryset = queryset.filter(name__icontains=station_name)
         return queryset
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="name",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter by name of the station",
+                required=False,
+                examples=[
+                    OpenApiExample(
+                        name="name",
+                        value="Warszawa"
+                    )
+                ]
+            )
+        ]
+    )
+    def list(self, request: Request, *args, **kwargs) -> Response:
+        return super().list(request, *args, **kwargs)
 
 
 class RouteViewSet(viewsets.ModelViewSet):
@@ -116,6 +163,39 @@ class TripViewSet(viewsets.ModelViewSet):
         elif self.action == "retrieve":
             return TripDetailSerializer
         return serializer_class
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="route",
+                type=int,
+                location=OpenApiParameter.QUERY,
+                description="Filter by id of the route",
+                required=False,
+                examples=[
+                    OpenApiExample(
+                        name="route",
+                        value=4
+                    )
+                ]
+            ),
+            OpenApiParameter(
+                name="train",
+                type=int,
+                location=OpenApiParameter.QUERY,
+                description="Filter by id of the train",
+                required=False,
+                examples=[
+                    OpenApiExample(
+                        name="train",
+                        value=7
+                    )
+                ]
+            )
+        ]
+    )
+    def list(self, request: Request, *args, **kwargs) -> Response:
+        return super().list(request, *args, **kwargs)
 
 
 class OrderViewSet(
